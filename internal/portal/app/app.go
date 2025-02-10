@@ -23,7 +23,7 @@ func StartApp() (err error) {
 		return err
 	}
 
-	a.api, err = portal.NewAPI(a.srv)
+	a.api, err = portal.NewAPI(a.router, a.srv)
 	if err != nil {
 		return err
 	}

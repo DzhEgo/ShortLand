@@ -13,9 +13,9 @@ type API struct {
 	srv    services.Service
 }
 
-func NewAPI(srv services.Service) (*API, error) {
+func NewAPI(router *mux.Router, srv services.Service) (*API, error) {
 	ah := &API{
-		router: mux.NewRouter(),
+		router: router,
 		srv:    srv,
 	}
 
