@@ -15,12 +15,8 @@ func StartAPIServer() {
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	r.HandleFunc("/create", func(w http.ResponseWriter, r *http.Request) {
-		CreateLink(w, r)
-	}).Methods("POST")
-	r.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request) {
-		GetOrigLink(w, r)
-	})
+	r.HandleFunc("/create", CreateLink).Methods("POST")
+	r.HandleFunc("/get", GetOrigLink).Methods("GET")
 
 	err := http.ListenAndServe(":3000", r)
 	if err != nil {
@@ -41,6 +37,7 @@ func CreateLink(w http.ResponseWriter, r *http.Request) {
 	shorLink, err := service.NewLinkService().CreateShortLink(cmd.Link)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -61,6 +58,7 @@ func GetOrigLink(w http.ResponseWriter, r *http.Request) {
 	origLink, err := service.NewLinkService().GetOriginalLink(cmd.Link)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
