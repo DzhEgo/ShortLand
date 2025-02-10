@@ -1,10 +1,9 @@
-package service
+package link
 
 import (
 	"ShortLand/internal/agent/link"
 	"ShortLand/internal/model"
 	"fmt"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -19,16 +18,17 @@ type linkService struct {
 }
 
 func NewLinkService() LinkService {
-	dsn := fmt.Sprintf("host=localhost user=postgres dbname=postgres sslmode=disable")
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil
-	}
-
-	return &linkService{
-		db: db,
-	}
+	//dsn := fmt.Sprintf("host=localhost user=postgres dbname=postgres sslmode=disable")
+	//
+	//db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	//if err != nil {
+	//	return nil
+	//}
+	//
+	//return &linkService{
+	//	db: db,
+	//}
+	return &linkService{}
 }
 
 func (s *linkService) CreateShortLink(origLink string) (string, error) {

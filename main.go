@@ -1,7 +1,9 @@
 package main
 
-import "ShortLand/internal/portal"
+import "ShortLand/internal/portal/app"
 
 func main() {
-	portal.StartAPIServer()
+	if err := app.StartApp(); err != nil {
+		panic(err)
+	}
 }

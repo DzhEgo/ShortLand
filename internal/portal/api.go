@@ -5,27 +5,27 @@ import (
 	"ShortLand/internal/portal/service"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"log"
 	"net/http"
 )
 
-func StartAPIServer() {
-
-	r := mux.NewRouter()
-
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	r.HandleFunc("/create", CreateLink).Methods("POST")
-	r.HandleFunc("/get", GetOrigLink).Methods("GET")
-
-	err := http.ListenAndServe(":3000", r)
-	if err != nil {
-		log.Fatal(err)
-	}
+type API struct {
+	router *mux.Router
+	srv    services.Service
 }
 
-func CreateLink(w http.ResponseWriter, r *http.Request) {
+func NewAPI(srv services.Service) (*API, error) {
+	ah := &API{
+		router: mux.NewRouter(),
+		srv:    srv,
+	}
+
+	ah.router.HandleFunc("/create", ah.createLink).Methods("POST")
+	ah.router.HandleFunc("/get", ah.getOrigLink).Methods("GET")
+
+	return ah, nil
+}
+
+func (ah *API) createLink(w http.ResponseWriter, r *http.Request) {
 	var cmd model.Command
 
 	err := json.NewDecoder(r.Body).Decode(&cmd)
@@ -35,7 +35,7 @@ func CreateLink(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	shorLink, err := service.NewLinkService().CreateShortLink(cmd.Link)
+	shorLink, err := ah.srv.Link.CreateShortLink(cmd.Link)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -47,7 +47,7 @@ func CreateLink(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(shorLink))
 }
 
-func GetOrigLink(w http.ResponseWriter, r *http.Request) {
+func (ah *API) getOrigLink(w http.ResponseWriter, r *http.Request) {
 	var cmd model.Command
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
@@ -56,7 +56,7 @@ func GetOrigLink(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	origLink, err := service.NewLinkService().GetOriginalLink(cmd.Link)
+	origLink, err := ah.srv.Link.GetOriginalLink(cmd.Link)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
