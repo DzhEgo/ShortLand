@@ -2,7 +2,10 @@ package service
 
 import (
 	"ShortLand/internal/agent/link"
+	"ShortLand/internal/model"
 	"fmt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"strings"
 )
 
@@ -12,22 +15,39 @@ type LinkService interface {
 }
 
 type linkService struct {
+	db *gorm.DB
 }
 
 func NewLinkService() LinkService {
-	return &linkService{}
+	dsn := fmt.Sprintf("host=localhost user=postgres dbname=postgres sslmode=disable")
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil
+	}
+
+	return &linkService{
+		db: db,
+	}
 }
 
 func (s *linkService) CreateShortLink(origLink string) (string, error) {
-	var shortLink string
+	var data model.LinkTable
 
 	if origLink == "" {
 		return "", fmt.Errorf("invalid link")
 	}
 
-	shortLink = link.CreateShortLink(origLink)
+	data = link.CreateShortLink(origLink)
+	if data.OriginLink == "" {
+		return "", fmt.Errorf("invalid link")
+	}
 
-	return shortLink, nil
+	if err := s.db.Save(&data).Error; err != nil {
+		return "", err
+	}
+
+	return data.ShortLink, nil
 }
 
 func (s *linkService) GetOriginalLink(shortLink string) (string, error) {
@@ -35,6 +55,10 @@ func (s *linkService) GetOriginalLink(shortLink string) (string, error) {
 
 	if shortLink == "" || strings.HasPrefix(shortLink, "http://") || strings.HasPrefix(shortLink, "https://") {
 		return "", fmt.Errorf("invalid link")
+	}
+
+	if err := s.db.Model(&model.LinkTable{}).Select("origin_link").Where("short_link = ?", shortLink).Take(&originalLink).Error; err != nil {
+		return "", err
 	}
 
 	originalLink = link.GetShortLink(shortLink)

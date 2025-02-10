@@ -10,6 +10,7 @@ import (
 )
 
 func StartAPIServer() {
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

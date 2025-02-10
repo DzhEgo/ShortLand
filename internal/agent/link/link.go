@@ -9,9 +9,9 @@ import (
 
 const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789_"
 
-var store = make(map[string]model.ShortLinkData)
+var store = make(map[string]model.LinkTable)
 
-func CreateShortLink(link string) string {
+func CreateShortLink(link string) model.LinkTable {
 	i := 0
 
 	for {
@@ -20,15 +20,17 @@ func CreateShortLink(link string) string {
 
 		data, exist := store[short]
 		if !exist {
-			store[short] = model.ShortLinkData{
-				LongLink: link,
-				ExpireAt: time.Now().Add(5 * time.Minute),
+			store[short] = model.LinkTable{
+				OriginLink: link,
+				ShortLink:  short,
+				ExpireAt:   time.Now().Add(5 * time.Minute).Unix(),
 			}
-			return short
+
+			return store[short]
 		}
 
-		if data.LongLink == link {
-			return short
+		if data.OriginLink == link {
+			return store[short]
 		}
 
 		i++
@@ -55,12 +57,12 @@ func GetShortLink(link string) string {
 		return ""
 	}
 
-	if time.Now().After(data.ExpireAt) {
+	if time.Now().Unix() > data.ExpireAt {
 		clean(link)
 		return ""
 	}
 
-	return data.LongLink
+	return data.OriginLink
 }
 
 func clean(link string) {
