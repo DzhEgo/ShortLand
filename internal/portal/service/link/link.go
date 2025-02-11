@@ -17,11 +17,10 @@ type LinkService interface {
 }
 
 type linkService struct {
-	stor LinkStorage
-	salt string
+	stor StorageLink
 }
 
-func NewLinkService(stor LinkStorage) LinkService {
+func NewLinkService(stor StorageLink) LinkService {
 	return &linkService{
 		stor: stor,
 	}
@@ -34,7 +33,7 @@ func (s *linkService) CreateShortLink(origLink string) (string, error) {
 
 	short, err := s.createShortLink(origLink)
 	if short == "" || err != nil {
-		return "", fmt.Errorf("failed to create short link")
+		return "", fmt.Errorf("failed to create short link: %w", err)
 	}
 
 	id, err := uuid.NewV4()
@@ -50,7 +49,7 @@ func (s *linkService) CreateShortLink(origLink string) (string, error) {
 	}
 
 	if err := s.stor.SaveLink(data); err != nil {
-		return "", fmt.Errorf("failed to save short link")
+		return "", fmt.Errorf("failed to save short link: %w", err)
 	}
 
 	return data.ShortLink, nil
@@ -80,7 +79,7 @@ func (s *linkService) GetOriginalLink(shortLink string) (string, error) {
 }
 
 func (s *linkService) createShortLink(link string) (string, error) {
-	short := generateShortLink(link, s.salt)
+	short := generateShortLink(link)
 
 	data, err := s.stor.GetLink(short)
 	if err != nil {
@@ -97,10 +96,10 @@ func (s *linkService) createShortLink(link string) (string, error) {
 	return "", fmt.Errorf("short link exist")
 }
 
-func generateShortLink(link, salt string) string {
+func generateShortLink(link string) string {
 	hash := sha256.New()
 
-	hash.Write([]byte(link + salt))
+	hash.Write([]byte(link))
 	sum := hash.Sum(nil)
 	short := make([]byte, 10)
 

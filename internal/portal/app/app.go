@@ -42,7 +42,7 @@ func StartApp() (err error) {
 
 func (a *app) initService() (err error) {
 	var srv services.Service
-	var linkStor link.LinkStorage
+	var linkStor link.StorageLink
 
 	if err = godotenv.Load(); err != nil {
 		log.Fatal(err)

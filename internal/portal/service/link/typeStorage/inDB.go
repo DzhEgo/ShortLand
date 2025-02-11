@@ -17,17 +17,17 @@ func NewInDB(db *gorm.DB) *InDB {
 }
 
 func (d *InDB) SaveLink(data model.LinkTable) error {
-	return d.db.Model(&model.LinkTable{}).Save(&data).Error
+	return d.db.Model(&model.LinkTable{}).Create(&data).Error
 }
 
 func (d *InDB) GetLink(shortLink string) (*model.LinkTable, error) {
-	var link *model.LinkTable
+	var link model.LinkTable
 
-	if err := d.db.Model(&model.LinkTable{}).Where("short_link = ?", shortLink).Take(link); err != nil {
+	if err := d.db.Model(&model.LinkTable{}).Where("short_link = ?", shortLink).Take(&link).Error; err != nil {
 		return nil, fmt.Errorf("failed to get link")
 	}
 
-	return link, nil
+	return &link, nil
 }
 
 func (d *InDB) DeleteLink(shortLink string) error {
