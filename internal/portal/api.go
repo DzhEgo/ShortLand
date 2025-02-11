@@ -1,7 +1,7 @@
 package portal
 
 import (
-	"ShortLand/internal/model"
+	"ShortLand/internal/common/model"
 	"ShortLand/internal/portal/service"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -43,7 +43,7 @@ func (ah *API) createLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(shorLink))
 }
 
@@ -64,6 +64,6 @@ func (ah *API) getOrigLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(origLink))
 }
