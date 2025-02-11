@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type app struct {
@@ -62,7 +63,11 @@ func (a *app) initService() (err error) {
 
 	if dbConn == "" || storType == "inMemory" {
 		log.Println("using in-memory")
-		linkStor = typeStorage.NewInMemory()
+
+		mem := typeStorage.NewInMemory()
+		mem.Cleanup(time.Minute * 5)
+
+		linkStor = mem
 	}
 
 	srv.Link = link.NewLinkService(linkStor)
