@@ -46,11 +46,15 @@ func (a *app) initService() (err error) {
 	var linkStor link.StorageLink
 
 	if err = godotenv.Load(); err != nil {
-		log.Fatal(err)
+		log.Println(".env file not found")
 	}
 
 	storType := os.Getenv("STORE_TYPE")
 	dbConn := os.Getenv("DB_CONN")
+
+	if storType == "" {
+		storType = "inMemory"
+	}
 
 	if dbConn != "" && storType == "inDB" {
 		a.db, err = db.Connect(dbConn)
