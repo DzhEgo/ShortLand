@@ -71,9 +71,11 @@ func (ah *API) getOrigLink(w http.ResponseWriter, r *http.Request) {
 
 		switch {
 		case errors.Is(err, link.Exist):
-			code = http.StatusNotFound
+			code = http.StatusConflict
 		case errors.Is(err, link.Invalid):
 			code = http.StatusBadRequest
+		case errors.Is(err, link.NotFound):
+			code = http.StatusNotFound
 		case errors.Is(err, link.Expired):
 			code = http.StatusGone
 		default:

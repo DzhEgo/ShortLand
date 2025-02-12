@@ -15,6 +15,7 @@ const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789_"
 var Expired = errors.New("short link expired")
 var Exist = errors.New("short link exist")
 var Invalid = errors.New("invalid link")
+var NotFound = errors.New("failed to find link")
 
 type LinkService interface {
 	CreateShortLink(origLink string) (*model.LinkOutput, error)
@@ -72,12 +73,12 @@ func (s *linkService) GetOriginalLink(shortLink string) (*model.LinkOutput, erro
 	var out *model.LinkOutput
 
 	if shortLink == "" || strings.HasPrefix(shortLink, "http://") || strings.HasPrefix(shortLink, "https://") {
-		return nil, fmt.Errorf(Invalid.Error())
+		return nil, Invalid
 	}
 
 	data, err := s.stor.GetLink(shortLink)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get short link: %w", err)
+		return nil, NotFound
 	}
 
 	if time.Now().Unix() > data.ExpireAt {
