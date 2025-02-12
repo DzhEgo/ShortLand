@@ -3,6 +3,7 @@ package link
 import (
 	"ShortLand/internal/common/model"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"github.com/gofrs/uuid"
 	"strings"
@@ -10,6 +11,10 @@ import (
 )
 
 const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789_"
+
+var Expired = errors.New("short link expired")
+var Exist = errors.New("short link exist")
+var Invalid = errors.New("invalid link")
 
 type LinkService interface {
 	CreateShortLink(origLink string) (string, error)
@@ -27,8 +32,8 @@ func NewLinkService(stor StorageLink) LinkService {
 }
 
 func (s *linkService) CreateShortLink(origLink string) (string, error) {
-	if origLink == "" {
-		return "", fmt.Errorf("invalid link")
+	if origLink == "" || !(strings.HasPrefix(origLink, "http://") || strings.HasPrefix(origLink, "https://")) {
+		return "", fmt.Errorf(Invalid.Error())
 	}
 
 	short, err := s.createShortLink(origLink)
@@ -59,12 +64,12 @@ func (s *linkService) GetOriginalLink(shortLink string) (string, error) {
 	var data *model.LinkTable
 
 	if shortLink == "" || strings.HasPrefix(shortLink, "http://") || strings.HasPrefix(shortLink, "https://") {
-		return "", fmt.Errorf("invalid link")
+		return "", fmt.Errorf(Invalid.Error())
 	}
 
 	data, err := s.stor.GetLink(shortLink)
 	if err != nil {
-		return "", fmt.Errorf("failed to get short link")
+		return "", fmt.Errorf("failed to get short link: %w", err)
 	}
 
 	if time.Now().Unix() > data.ExpireAt {
@@ -72,7 +77,7 @@ func (s *linkService) GetOriginalLink(shortLink string) (string, error) {
 			return "", fmt.Errorf("failed to delete short link")
 		}
 
-		return "", fmt.Errorf("short link expired")
+		return "", fmt.Errorf(Expired.Error())
 	}
 
 	return data.OriginLink, nil
@@ -93,7 +98,7 @@ func (s *linkService) createShortLink(link string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("short link exist")
+	return "", fmt.Errorf(Exist.Error())
 }
 
 func generateShortLink(link string) string {
