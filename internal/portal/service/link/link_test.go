@@ -1,9 +1,19 @@
 package link
 
 import (
+	"ShortLand/internal/common/db"
 	"ShortLand/internal/portal/service/link/typeStorage"
+	"github.com/joho/godotenv"
+	"gorm.io/gorm"
+	"os"
 	"testing"
 )
+
+func initDB() *gorm.DB {
+	godotenv.Load("../../../../.env")
+	dbT, _ := db.Connect(os.Getenv("DB_CONN"))
+	return dbT
+}
 
 func Test_linkService_createShortLink(t *testing.T) {
 	type fields struct {
@@ -20,7 +30,7 @@ func Test_linkService_createShortLink(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "create short link",
+			name: "create short link. MEM.",
 			fields: fields{
 				stor: typeStorage.NewInMemory(),
 			},
@@ -31,7 +41,7 @@ func Test_linkService_createShortLink(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "create empty short link",
+			name: "create empty short link. MEM.",
 			fields: fields{
 				stor: typeStorage.NewInMemory(),
 			},
@@ -42,9 +52,42 @@ func Test_linkService_createShortLink(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "create short link without http/https",
+			name: "create short link without http/https. MEM.",
 			fields: fields{
 				stor: typeStorage.NewInMemory(),
+			},
+			args: args{
+				link: "google.com",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "create short link. DB.",
+			fields: fields{
+				stor: typeStorage.NewInDB(initDB()),
+			},
+			args: args{
+				link: "http://google.com",
+			},
+			want:    "4K9rajbFjd",
+			wantErr: false,
+		},
+		{
+			name: "create empty short link. DB.",
+			fields: fields{
+				stor: typeStorage.NewInDB(initDB()),
+			},
+			args: args{
+				link: "",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "create short link without http/https. DB.",
+			fields: fields{
+				stor: typeStorage.NewInDB(initDB()),
 			},
 			args: args{
 				link: "google.com",
@@ -88,7 +131,7 @@ func Test_linkService_GetOriginalLink(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "get original link",
+			name: "get original link. MEM.",
 			fields: fields{
 				stor: typeStorage.NewInMemory(),
 			},
@@ -100,9 +143,33 @@ func Test_linkService_GetOriginalLink(t *testing.T) {
 			want: "http://google.com",
 		},
 		{
-			name: "not exist original link",
+			name: "not exist original link. MEM.",
 			fields: fields{
 				stor: typeStorage.NewInMemory(),
+			},
+			args: args{
+				origLink:  "http://google.com",
+				shortLink: "4K9rajb343",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "get original link. DB.",
+			fields: fields{
+				stor: typeStorage.NewInDB(initDB()),
+			},
+
+			args: args{
+				origLink:  "http://google.com",
+				shortLink: "4K9rajbFjd",
+			},
+			want: "http://google.com",
+		},
+		{
+			name: "not exist original link. MEM.",
+			fields: fields{
+				stor: typeStorage.NewInDB(initDB()),
 			},
 			args: args{
 				origLink:  "http://google.com",
