@@ -17,8 +17,8 @@ var Exist = errors.New("short link exist")
 var Invalid = errors.New("invalid link")
 
 type LinkService interface {
-	CreateShortLink(origLink string) (string, error)
-	GetOriginalLink(shortLink string) (string, error)
+	CreateShortLink(origLink string) (*model.LinkOutput, error)
+	GetOriginalLink(shortLink string) (*model.LinkOutput, error)
 }
 
 type linkService struct {
@@ -31,56 +31,69 @@ func NewLinkService(stor StorageLink) LinkService {
 	}
 }
 
-func (s *linkService) CreateShortLink(origLink string) (string, error) {
+func (s *linkService) CreateShortLink(origLink string) (*model.LinkOutput, error) {
+	var out *model.LinkOutput
+
 	if origLink == "" || !(strings.HasPrefix(origLink, "http://") || strings.HasPrefix(origLink, "https://")) {
-		return "", fmt.Errorf(Invalid.Error())
+		return nil, Invalid
 	}
 
 	short, err := s.createShortLink(origLink)
 	if short == "" || err != nil {
-		return "", fmt.Errorf("failed to create short link: %w", err)
+		return nil, err
 	}
 
 	id, err := uuid.NewV4()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
+	expireTime := time.Now().Add(time.Minute * 2).Unix()
 	data := model.LinkTable{
 		ID:         id.String(),
 		OriginLink: origLink,
 		ShortLink:  short,
-		ExpireAt:   time.Now().Add(time.Minute * 2).Unix(),
+		ExpireAt:   expireTime,
 	}
 
 	if err := s.stor.SaveLink(data); err != nil {
-		return "", fmt.Errorf("failed to save short link: %w", err)
+		return nil, fmt.Errorf("failed to save short link: %w", err)
 	}
 
-	return data.ShortLink, nil
+	out = &model.LinkOutput{
+		Link:     short,
+		ExpireAt: expireTime,
+	}
+
+	return out, nil
 }
 
-func (s *linkService) GetOriginalLink(shortLink string) (string, error) {
-	var data *model.LinkTable
+func (s *linkService) GetOriginalLink(shortLink string) (*model.LinkOutput, error) {
+	var out *model.LinkOutput
 
 	if shortLink == "" || strings.HasPrefix(shortLink, "http://") || strings.HasPrefix(shortLink, "https://") {
-		return "", fmt.Errorf(Invalid.Error())
+		return nil, fmt.Errorf(Invalid.Error())
 	}
 
 	data, err := s.stor.GetLink(shortLink)
 	if err != nil {
-		return "", fmt.Errorf("failed to get short link: %w", err)
+		return nil, fmt.Errorf("failed to get short link: %w", err)
 	}
 
 	if time.Now().Unix() > data.ExpireAt {
 		if err := s.stor.DeleteLink(shortLink); err != nil {
-			return "", fmt.Errorf("failed to delete short link")
+			return nil, fmt.Errorf("failed to delete short link")
 		}
 
-		return "", fmt.Errorf(Expired.Error())
+		return nil, Expired
 	}
 
-	return data.OriginLink, nil
+	out = &model.LinkOutput{
+		Link:     data.OriginLink,
+		ExpireAt: data.ExpireAt,
+	}
+
+	return out, nil
 }
 
 func (s *linkService) createShortLink(link string) (string, error) {
@@ -98,7 +111,7 @@ func (s *linkService) createShortLink(link string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf(Exist.Error())
+	return "", Exist
 }
 
 func generateShortLink(link string) string {

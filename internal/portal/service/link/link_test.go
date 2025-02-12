@@ -63,8 +63,10 @@ func Test_linkService_createShortLink(t *testing.T) {
 				t.Errorf("createShortLink() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("createShortLink() got = %v, want %v", got, tt.want)
+			if got != nil {
+				if got.Link != tt.want {
+					t.Errorf("createShortLink() got = %v, want %v", got.Link, tt.want)
+				}
 			}
 		})
 	}
@@ -121,8 +123,10 @@ func Test_linkService_GetOriginalLink(t *testing.T) {
 				t.Errorf("GetOriginalLink() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("GetOriginalLink() got = %v, want %v", got, tt.want)
+			if got != nil {
+				if got.Link != tt.want {
+					t.Errorf("GetOriginalLink() got = %v, want %v", got.Link, tt.want)
+				}
 			}
 		})
 	}

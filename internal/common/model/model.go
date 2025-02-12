@@ -10,3 +10,13 @@ type LinkTable struct {
 	ShortLink  string `json:"short_link" gorm:"column:short_link;unique"`
 	ExpireAt   int64  `json:"expire_at" gorm:"column:expire_at"`
 }
+
+type LinkOutput struct {
+	Link     string `json:"link"`
+	ExpireAt int64  `json:"expire_at"`
+}
+
+type ErrorResponse struct {
+	Code  int    `json:"code"`
+	Error string `json:"error"`
+}

@@ -29,6 +29,7 @@ func NewAPI(router *mux.Router, srv services.Service) (*API, error) {
 
 func (ah *API) createLink(w http.ResponseWriter, r *http.Request) {
 	var cmd model.Command
+	w.Header().Set("Content-Type", "application/json")
 
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
@@ -37,44 +38,53 @@ func (ah *API) createLink(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	shorLink, err := ah.srv.Link.CreateShortLink(cmd.Link)
+	shortLink, err := ah.srv.Link.CreateShortLink(cmd.Link)
 	if err != nil {
+		var code int
+
 		switch {
 		case errors.Is(err, link.Exist):
-			w.WriteHeader(http.StatusConflict)
+			code = http.StatusConflict
 		case errors.Is(err, link.Invalid):
-			w.WriteHeader(http.StatusBadRequest)
+			code = http.StatusBadRequest
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
+			code = http.StatusInternalServerError
 		}
-		w.Write([]byte(err.Error()))
+
+		w.WriteHeader(code)
+		json.NewEncoder(w).Encode(model.ErrorResponse{Code: code, Error: err.Error()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(shorLink))
+	json.NewEncoder(w).Encode(shortLink)
 }
 
 func (ah *API) getOrigLink(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sLink := vars["link"]
+	w.Header().Set("Content-Type", "application/json")
 
 	origLink, err := ah.srv.Link.GetOriginalLink(sLink)
 	if err != nil {
+		var code int
+
 		switch {
 		case errors.Is(err, link.Exist):
-			w.WriteHeader(http.StatusGone)
+			code = http.StatusNotFound
 		case errors.Is(err, link.Invalid):
-			w.WriteHeader(http.StatusBadRequest)
+			code = http.StatusBadRequest
+		case errors.Is(err, link.Expired):
+			code = http.StatusGone
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
+			code = http.StatusInternalServerError
 		}
-		w.Write([]byte(err.Error()))
+
+		w.WriteHeader(code)
+		json.NewEncoder(w).Encode(model.ErrorResponse{Code: code, Error: err.Error()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(origLink))
+	json.NewEncoder(w).Encode(origLink)
 }
